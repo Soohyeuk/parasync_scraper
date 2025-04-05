@@ -1,8 +1,11 @@
 package scraper
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -74,7 +77,21 @@ func extractData(doc *goquery.Document) (title, description string, headings []s
 //   - Writes formatted JSON
 //   - Handles file I/O errors
 func writeResults(results []Result, filename string) error {
-	// Implementation will go here
+	// Create result directory if it doesn't exist
+	err := os.Mkdir("result", 0755)
+	if err != nil && !os.IsExist(err) {
+		return fmt.Errorf("error creating a result directory %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(results, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error marshaling results to JSON: %w", err)
+	}
+
+	err = os.WriteFile(filename, jsonData, 0644)
+	if err != nil {
+		return fmt.Errorf("error writing results to file: %w", err)
+	}
 
 	return nil
 }
@@ -91,6 +108,20 @@ func writeResults(results []Result, filename string) error {
 //   - Validates URL format
 //   - Handles file I/O errors
 func readURLs(filename string) ([]string, error) {
-	// Implementation will go here
-	return nil, nil
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error finding a file, please provide a correct filename: %w", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+	return lines, nil
 }
