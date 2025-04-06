@@ -2,15 +2,9 @@ package scraper
 
 import (
 	"net/http"
-	"time"
-)
 
-// Config holds scraper configuration
-type Config struct {
-	MaxWorkers int
-	Timeout    time.Duration
-	MaxRetries int
-}
+	"github.com/Soohyeuk/parasync_scraper/pkg/config"
+)
 
 // Scraper represents the main scraping service
 type Scraper struct {
@@ -29,14 +23,14 @@ type Result struct {
 }
 
 // NewScraper creates a new scraper instance
-// Input: *Config: Configuration for the scraper
+// Input: *config.ScraperConfig: Configuration for the scraper
 // Output: *Scraper: Initialized scraper instance
 // Description:
 //   - Creates HTTP client with configured timeout
 //   - Sets up worker pool size
 //   - Configures retry mechanism
 //   - Initializes necessary channels and sync primitives
-func NewScraper(config *Config) *Scraper {
+func NewScraper(config *config.ScraperConfig) *Scraper {
 	return &Scraper{
 		client: &http.Client{
 			Timeout: config.Timeout,
@@ -58,8 +52,11 @@ func NewScraper(config *Config) *Scraper {
 //   - Collects and aggregates results
 //   - Handles any errors during processing
 func (s *Scraper) Scrape(urls []string) ([]Result, error) {
-	wp := NewWorkerPool(len(urls), s)
-	results := wp.Start(urls)
+	// Create a worker pool
+	pool := NewWorkerPool(s.maxWorkers, s)
+
+	// Start the worker pool with the URLs
+	results := pool.Start(urls)
 
 	return results, nil
 }
@@ -73,7 +70,7 @@ func (s *Scraper) Scrape(urls []string) ([]Result, error) {
 //   - Extracts required data
 //   - Handles any errors during processing
 func (s *Scraper) ScrapeURL(url string) Result {
-	query, err := fetchURL(url, s.client)
+	query, err := FetchURL(url, s.client)
 	if err != nil {
 		return Result{
 			URL:   url,
@@ -81,7 +78,7 @@ func (s *Scraper) ScrapeURL(url string) Result {
 		}
 	}
 
-	title, description, headings := extractData(query)
+	title, description, headings := ExtractData(query)
 	return Result{
 		URL:         url,
 		Title:       title,

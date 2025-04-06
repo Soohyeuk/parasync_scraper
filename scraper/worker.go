@@ -20,11 +20,34 @@ type WorkerPool struct {
 //   - Initializes WaitGroup
 //   - Sets up worker goroutines
 func NewWorkerPool(size int, scraper *Scraper) *WorkerPool {
-	return &WorkerPool{
+	wp := &WorkerPool{
 		jobs:    make(chan string, size),
 		results: make(chan Result, size),
 		wg:      sync.WaitGroup{},
 		scraper: scraper,
+	}
+
+	// Start worker goroutines
+	for i := 0; i < size; i++ {
+		wp.wg.Add(1)
+		go wp.worker()
+	}
+
+	return wp
+}
+
+// worker processes URLs from the jobs channel
+// Description:
+//   - Reads URLs from jobs channel
+//   - Uses scraper to process each URL
+//   - Sends results to results channel
+//   - Handles channel closure
+func (wp *WorkerPool) worker() {
+	defer wp.wg.Done()
+
+	for url := range wp.jobs {
+		result := wp.scraper.ScrapeURL(url)
+		wp.results <- result
 	}
 }
 
@@ -37,17 +60,29 @@ func NewWorkerPool(size int, scraper *Scraper) *WorkerPool {
 //   - Handles worker synchronization
 //   - Returns aggregated results
 func (wp *WorkerPool) Start(urls []string) []Result {
+	// Start a goroutine to collect results
+	var allResults []Result
+	var resultsWg sync.WaitGroup
+	resultsWg.Add(1)
+	go func() {
+		defer resultsWg.Done()
+		for result := range wp.results {
+			allResults = append(allResults, result)
+		}
+	}()
+
+	// Send all URLs to workers
 	for _, url := range urls {
 		wp.jobs <- url
 	}
 	close(wp.jobs)
+
+	// Wait for all workers to finish
 	wp.wg.Wait()
 	close(wp.results)
 
-	var allResults []Result
-	for result := range wp.results {
-		allResults = append(allResults, result)
-	}
+	// Wait for results collection to finish
+	resultsWg.Wait()
 
 	return allResults
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// fetchURL retrieves and parses a URL
+// FetchURL retrieves and parses a URL
 // Input:
 //   - string: URL to fetch
 //   - *http.Client: Configured HTTP client
@@ -24,7 +24,7 @@ import (
 //   - Handles response status codes
 //   - Parses HTML into goquery document
 //   - Manages request timeouts
-func fetchURL(url string, client *http.Client) (*goquery.Document, error) {
+func FetchURL(url string, client *http.Client) (*goquery.Document, error) {
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func fetchURL(url string, client *http.Client) (*goquery.Document, error) {
 	return doc, nil
 }
 
-// extractData extracts required data from HTML document
+// ExtractData extracts required data from HTML document
 // Input: *goquery.Document: Parsed HTML document
 // Output:
 //   - string: Page title
@@ -55,7 +55,7 @@ func fetchURL(url string, client *http.Client) (*goquery.Document, error) {
 //   - Finds meta description
 //   - Collects all H1 headings
 //   - Handles missing elements gracefully
-func extractData(doc *goquery.Document) (title, description string, headings []string) {
+func ExtractData(doc *goquery.Document) (title, description string, headings []string) {
 	title = doc.Find("title").Text()
 	description, _ = doc.Find("meta[name=description]").First().Attr("content")
 	doc.Find("h1").Each(func(i int, s *goquery.Selection) {
@@ -65,7 +65,37 @@ func extractData(doc *goquery.Document) (title, description string, headings []s
 	return title, description, headings
 }
 
-// writeResults writes results to JSON file
+// ReadURLs reads URLs from input file
+// Input: string: Input file path
+// Output:
+//   - []string: List of URLs
+//   - error: Any error during file reading
+//
+// Description:
+//   - Opens and reads input file
+//   - Parses URLs (one per line)
+//   - Validates URL format
+//   - Handles file I/O errors
+func ReadURLs(filename string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error finding a file, please provide a correct filename: %w", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+	return lines, nil
+}
+
+// WriteResults writes results to JSON file
 // Input:
 //   - []Result: Scraping results to write
 //   - string: Output file path
@@ -76,7 +106,7 @@ func extractData(doc *goquery.Document) (title, description string, headings []s
 //   - Creates output file
 //   - Writes formatted JSON
 //   - Handles file I/O errors
-func writeResults(results []Result, filename string) error {
+func WriteResults(results []Result, filename string) error {
 	// Create result directory if it doesn't exist
 	err := os.Mkdir("result", 0755)
 	if err != nil && !os.IsExist(err) {
@@ -94,34 +124,4 @@ func writeResults(results []Result, filename string) error {
 	}
 
 	return nil
-}
-
-// readURLs reads URLs from input file
-// Input: string: Input file path
-// Output:
-//   - []string: List of URLs
-//   - error: Any error during file reading
-//
-// Description:
-//   - Opens and reads input file
-//   - Parses URLs (one per line)
-//   - Validates URL format
-//   - Handles file I/O errors
-func readURLs(filename string) ([]string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("error finding a file, please provide a correct filename: %w", err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	var lines []string
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading file: %w", err)
-	}
-	return lines, nil
 }
