@@ -20,20 +20,12 @@ type WorkerPool struct {
 //   - Initializes WaitGroup
 //   - Sets up worker goroutines
 func NewWorkerPool(size int, scraper *Scraper) *WorkerPool {
-	// Implementation will go here
-	return nil
-}
-
-// worker processes URLs from the jobs channel
-// Input: int: Worker ID for logging
-// Output: None
-// Description:
-//   - Continuously reads URLs from jobs channel
-//   - Processes each URL
-//   - Sends results to results channel
-//   - Handles worker cleanup
-func (wp *WorkerPool) worker(id int) {
-	// Implementation will go here
+	return &WorkerPool{
+		jobs:    make(chan string, size),
+		results: make(chan Result, size),
+		wg:      sync.WaitGroup{},
+		scraper: scraper,
+	}
 }
 
 // Start begins processing the URL list
@@ -45,6 +37,17 @@ func (wp *WorkerPool) worker(id int) {
 //   - Handles worker synchronization
 //   - Returns aggregated results
 func (wp *WorkerPool) Start(urls []string) []Result {
-	// Implementation will go here
-	return nil
+	for _, url := range urls {
+		wp.jobs <- url
+	}
+	close(wp.jobs)
+	wp.wg.Wait()
+	close(wp.results)
+
+	var allResults []Result
+	for result := range wp.results {
+		allResults = append(allResults, result)
+	}
+
+	return allResults
 }

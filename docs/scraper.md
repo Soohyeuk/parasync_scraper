@@ -95,15 +95,6 @@ type WorkerPool struct {
 //   - Sets up worker goroutines
 func NewWorkerPool(size int) *WorkerPool
 
-// worker processes URLs from the jobs channel
-// Input: int: Worker ID for logging
-// Output: None
-// Description:
-//   - Continuously reads URLs from jobs channel
-//   - Processes each URL
-//   - Sends results to results channel
-//   - Handles worker cleanup
-func (wp *WorkerPool) worker(id int)
 
 // Start begins processing the URL list
 // Input: []string: List of URLs to process
