@@ -1,132 +1,81 @@
-# Test Package
+# Test Package Documentation
 
-Directory containing test files and test data. This package is responsible for:
-- Providing unit tests for all components
-- Including integration tests for the complete workflow
-- Maintaining test fixtures and sample data
-- Ensuring code coverage and quality
-- Validating error handling and edge cases
-- Testing concurrent operations and race conditions
+The test package contains comprehensive tests for the scraper functionality, including worker pool behavior and rate limiting handling.
 
-## Files
+## Test Files
 
 ### scraper_test.go
+
+Contains the main test suite for the scraper package:
+
 ```go
-package scraper_test
-
-import (
-    "testing"
-    "github.com/soohyeuk/parasync_scraper/scraper"
-)
-
-// Function Headers
-
-// TestNewScraper tests scraper initialization
-// Input: *testing.T: Testing context
-// Output: None
-// Description:
-//   - Tests creation with valid configuration
-//   - Verifies default values are set correctly
-//   - Checks error handling with invalid config
-//   - Validates HTTP client initialization
 func TestNewScraper(t *testing.T)
-
-// TestScrapeURL tests single URL scraping
-// Input: *testing.T: Testing context
-// Output: None
-// Description:
-//   - Tests successful URL scraping
-//   - Verifies data extraction accuracy
-//   - Tests error handling for invalid URLs
-//   - Validates retry mechanism
-//   - Checks timeout handling
 func TestScrapeURL(t *testing.T)
-
-// TestWorkerPool tests worker pool functionality
-// Input: *testing.T: Testing context
-// Output: None
-// Description:
-//   - Tests concurrent URL processing
-//   - Verifies worker pool size limits
-//   - Tests result collection
-//   - Validates worker cleanup
-//   - Checks race conditions
 func TestWorkerPool(t *testing.T)
-
-// TestExtractData tests HTML data extraction
-// Input: *testing.T: Testing context
-// Output: None
-// Description:
-//   - Tests title extraction
-//   - Verifies description parsing
-//   - Tests heading collection
-//   - Validates handling of missing elements
-//   - Checks HTML parsing edge cases
 func TestExtractData(t *testing.T)
 ```
 
-### test_data/
-```
-test/
-├── data/
-│   ├── urls.txt           # Sample URL list for testing
-│   └── expected.json      # Expected output format and data
-└── fixtures/
-    ├── basic.html         # Basic HTML fixture with all required elements
-    └── complex.html       # Complex HTML fixture with edge cases
+## Test Fixtures
+
+Located in `test/fixtures/`:
+
+1. `basic.html`: Simple HTML page for basic scraping tests
+2. `complex.html`: Complex HTML page with nested elements
+3. `error.html`: Error page for testing error handling
+
+## Test Data
+
+Located in `test/data/`:
+
+1. `urls.txt`: Sample URLs for testing (100 subreddits)
+
+## Test Coverage
+
+The test suite covers:
+
+1. Scraper Initialization
+   - Configuration validation
+   - Default values
+   - Custom settings
+
+2. URL Scraping
+   - Single URL scraping
+   - Multiple URL concurrent scraping
+   - Error handling
+   - Rate limiting
+
+3. Worker Pool
+   - Concurrent processing
+   - Result collection
+   - Error propagation
+   - Resource cleanup
+
+4. Data Extraction
+   - Title extraction
+   - Description extraction
+   - Heading extraction
+   - Error handling
+
+## Running Tests
+
+```bash
+# Run all tests
+go test ./...
+
+# Run with verbose output
+go test -v ./...
+
+# Run specific test
+go test -v -run TestScrapeURL
+
+# Run with race detector
+go test -race ./...
 ```
 
-### Example Test Data
+## Test Best Practices
 
-#### urls.txt
-```
-https://example.com
-https://example.org
-https://example.net
-```
-
-#### expected.json
-```json
-[
-  {
-    "url": "https://example.com",
-    "title": "Example Domain",
-    "description": "Example website description",
-    "headings": ["Welcome to Example.com"]
-  }
-]
-```
-
-### Test Fixtures
-
-#### basic.html
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Example Domain</title>
-    <meta name="description" content="Example website description">
-</head>
-<body>
-    <h1>Welcome to Example.com</h1>
-</body>
-</html>
-```
-
-#### complex.html
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Complex Example</title>
-    <meta name="description" content="A more complex example with multiple elements">
-</head>
-<body>
-    <h1>Main Heading</h1>
-    <h1>Another Heading</h1>
-    <div>
-        <h1>Nested Heading</h1>
-    </div>
-</body>
-</html>
-``` 
+1. Use appropriate timeouts for network-dependent tests
+2. Clean up test resources after each test
+3. Test both success and error cases
+4. Verify rate limiting behavior
+5. Check concurrent processing correctness 

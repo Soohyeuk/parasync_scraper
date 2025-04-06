@@ -1,77 +1,79 @@
-# Command Line Interface (cmd)
+# Command Line Interface Documentation
 
-Directory containing the main application entry point and CLI handling. This directory is responsible for:
-- Parsing and validating command-line arguments
-- Initializing the scraper with user-provided configuration
-- Managing the program's execution flow
-- Handling errors and providing user feedback
-- Coordinating between different components of the application
+The CLI provides a user-friendly interface for the scraper with configurable options.
 
-## Files
+## Usage
 
-### main.go
-```go
-package main
+```bash
+go run cmd/scraper/main.go [options]
+```
 
-import (
-    "flag"
-    "fmt"
-    "os"
-    "time"
-)
+## Options
 
-// Config holds all CLI configuration
-type Config struct {
-    InputFile  string        // Path to file containing URLs (one per line)
-    OutputFile string        // Path to save JSON results
-    MaxWorkers int           // Maximum number of concurrent workers (default: 5)
-    Timeout    time.Duration // HTTP request timeout (default: 30s)
-    MaxRetries int           // Maximum number of retry attempts (default: 3)
-}
+| Option    | Description                                    | Default           |
+|-----------|------------------------------------------------|-------------------|
+| -input    | Path to input file with URLs (one per line)    | (required)        |
+| -output   | Path to output file for results                | result/output.json|
+| -workers  | Number of concurrent workers                   | 5                 |
+| -timeout  | HTTP request timeout in seconds                | 30s               |
+| -retries  | Maximum number of retry attempts               | 3                 |
 
-// Function Headers
+## Examples
 
-// main is the entry point of the application
-// Input: Command line arguments
-// Output: Exit code (0 for success, non-zero for errors)
-// Description: Orchestrates the entire program flow, including:
-//   - Parsing command line flags
-//   - Validating configuration
-//   - Initializing the scraper
-//   - Running the scraping process
-//   - Handling errors and cleanup
-func main()
+### Basic Usage
+```bash
+go run cmd/scraper/main.go -input urls.txt
+```
 
-// parseFlags parses and validates command line arguments
-// Input: Command line arguments
-// Output: 
-//   - *Config: Parsed configuration or nil if error
-//   - error: Parsing or validation error if any
-// Description: 
-//   - Parses -input, -output, -workers, -timeout, -retries flags
-//   - Sets default values if not provided
-//   - Validates flag values are within acceptable ranges
-func parseFlags() (*Config, error)
+### Custom Configuration
+```bash
+go run cmd/scraper/main.go -input urls.txt -output results.json -workers 10 -timeout 60s -retries 5
+```
 
-// validateConfig ensures all required fields are set
-// Input: *Config: Configuration to validate
-// Output: error if validation fails, nil otherwise
-// Description:
-//   - Checks if input file exists and is readable
-//   - Verifies output file path is writable
-//   - Ensures worker count is between 1 and 20
-//   - Validates timeout is between 5s and 2m
-//   - Confirms retry count is between 0 and 5
-func validateConfig(cfg *Config) error
+### Rate-Limited Scraping
+```bash
+# Use fewer workers for rate-limited sites
+go run cmd/scraper/main.go -input urls.txt -workers 3 -timeout 30s
+```
 
-// run executes the main program logic
-// Input: *Config: Validated configuration
-// Output: error if execution fails, nil otherwise
-// Description:
-//   - Reads URLs from input file
-//   - Initializes scraper with configuration
-//   - Executes scraping process
-//   - Writes results to output file
-//   - Handles any errors during execution
-func run(cfg *Config) error
+## Input File Format
+
+Create a text file with one URL per line:
+```
+https://example.com
+https://example.org
+https://example.net
+```
+
+## Output Format
+
+Results are written to the specified output file in JSON format:
+```json
+[
+  {
+    "url": "https://example.com",
+    "title": "Page Title",
+    "description": "Page description",
+    "headings": ["Heading 1", "Heading 2"],
+    "error": null
+  }
+]
+```
+
+## Error Handling
+
+The CLI handles various error scenarios:
+1. Invalid input file
+2. Invalid command-line options
+3. Scraping errors (logged to output file)
+4. Rate limiting errors (429)
+5. Network timeouts
+
+## Best Practices
+
+1. Start with a small number of workers (3-5) and adjust based on target server's rate limits
+2. Use appropriate timeouts for your network conditions
+3. Monitor the output file for errors and adjust configuration accordingly
+4. For large URL lists, consider splitting into smaller batches
+5. Use appropriate retry counts based on target server reliability
 ``` 
